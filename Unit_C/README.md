@@ -40,5 +40,10 @@
 - 当我们将 `measurement` 信号的宽度设置成50；这要比`control`的误差大很多，此时，posterior的peaks要比之前低很多；也就是说，如果我们降低测量信号的精度，那么estimated/posterior的精度也会下降；极端情况下，如果没有measurements，随着movement，位置分布会越来越宽，并且peak会越来越低
 
 ## storage efficiency problem： `slam_06_e_histogram_filter_cleanedup`
+现在的问题是，在Bayes Filter中，我们用arrays存储的posterior和prior，随着movement，两个分布会变得越来越宽，也就是对应的arrays会变得越来越长；然后我们又要求卷积和乘积，这个的计算量会非常大。所以我们想要用另外一种方法表示prior和posterior，从而使得在卷积的这一步中，我们可以将Σ转变成∫，并且保证prior和posterior都能用这个方式表示
 
+- 我们可以看到，第二个蓝色曲线几乎是一个bell shape，因为两个triangle shapes 卷积后，就会得到一个binomial，而不再是triangle shape；这个看起来几乎和高斯分布一样了，如果我们将 `Dist` 设置成 `Distribution.gaussian`，我们会发现，如果分布假设成高斯分布，那么无论是通过卷积得到的蓝色曲线（prior）还是通过乘积得到的红色曲线（posterior），都将保持为高斯分布，即：
+  - 高斯 * 高斯 = 高斯
+  - 高斯 · 高斯 = 高斯
+- 并且，由于第二个绿色曲线（measurement）的方差比prior大一倍，所以得到的红色曲线（posterior）更靠近prior，也就是更信任prior
 
