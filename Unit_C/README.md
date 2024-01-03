@@ -1,0 +1,44 @@
+# C 01 利用离散概率分布表示位置误差
+- `distribution.py` 中定义了一个`class Distribution`，其中包含有脉冲信号，三角信号和高斯信号，用来表示位置或者控制分布
+- `slam_06_a_move_distribution_question`
+
+
+# C 03 误差传播
+- 除了位置误差外，还有需要用离散概率分布表示运动/控制误差；
+- 误差的传播变现为 位置的概率分布和运动的概率分布的卷积
+  -  Bayes：P(A,B) = P(B|A) · P(A)
+  -  全概率：P(Bj) = Σ P(Bj|Ai) · P(Ai)
+  -  `slam_06_b_convolve_distribution_question`
+ 
+
+# C 04 `slam_06_c_multiply_distribution_question` 引入测量误差，考虑将测量误差和位置误差进行融合
+当我们将 `slam_06_b_convolve_distribution_question` 中的 `arena` 和 `moves` 增大时，我们在看plot，可以发现：as we move on，
+- the distributions lose their triangle shape，变成了bell shape
+- 同时，分布也越来越宽，甚至开始overlap
+
+## 引入测量误差
+现在，我们有了两个distributions用来描述postision和movement，现在还缺少对measurement的描述。
+
+1. 传感器在出厂前会进行calibrate，也就是说，测量一个calibrated distance，然后将测量结果绘制出来，通常我们会假设是高斯误差，所以测量的结果绘制出来的曲线应该是一条高斯分布；然后出厂的时候，会说这个传感器的精度为±4cm，也就是说这个高斯分布的标准差σ = 4cm，而期望应该为calibrated distance，否则就是有系统误差
+2. 等到我们用这个传感器测量一个距离时，我们也需要将传感器的误差考虑进小车的位置误差内
+   - 小车的位置误差分布称为prior
+   - 传感器的测量误差分布称为mearsurement
+
+## 融合测量误差和位置误差
+由 `slam_06_c_multiply_distribution_question.py` 的plot可知：
+- 尽管measurement要比prior精度低（`main` 函数中，`measurement_error` 为200，而`position_error` 仅为100），但是，posterior还是要比prior精度要更高：posterior更窄，并且峰值更高
+
+
+# C 06
+继续研究 `slam_06_c_multiply_distribution_question.py`：
+- 将 `measurement_value` 设成500；此时posterior向measurement偏，所以其形状也不再是三角形了；
+- 将 `measurement_value` 设成550；此时，measurement和prior几乎实在说，机器人不在同一个地方了；但是尽管如此，posterior的peak也比prior和measurement高。也就是说，无论measurement和prior区别多大，只要加上information from laser scanner，我们都可以得到一个 `information gain`
+
+## dynamic Bayes network -> (discrete) Bayes Filter -> Historgram Filter: `slam_06_d_histogram_filter`
+
+- 当我们将 `control` 信号的宽度设置成50；这要比`measurement`的误差大太多了，所以我们可以看到，红色的posterior比蓝色的prior精度高很多；但是再下一回合的move后，这些gained information由于位置分布的精度太低，又丢失了；另外，每次的posterior几乎不变，因为movement的精度太低，此时posterior更加相信measurements
+- 当我们将 `measurement` 信号的宽度设置成50；这要比`control`的误差大很多，此时，posterior的peaks要比之前低很多；也就是说，如果我们降低测量信号的精度，那么estimated/posterior的精度也会下降；极端情况下，如果没有measurements，随着movement，位置分布会越来越宽，并且peak会越来越低
+
+## storage efficiency problem： `slam_06_e_histogram_filter_cleanedup`
+
+
