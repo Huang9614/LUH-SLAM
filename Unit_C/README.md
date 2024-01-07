@@ -29,7 +29,7 @@
 - 尽管measurement要比prior精度低（`main` 函数中，`measurement_error` 为200，而`position_error` 仅为100），但是，posterior还是要比prior精度要更高：posterior更窄，并且峰值更高
 
 
-# C 06
+# C 06 引入1D Kalman Filter
 继续研究 `slam_06_c_multiply_distribution_question.py`：
 - 将 `measurement_value` 设成500；此时posterior向measurement偏，所以其形状也不再是三角形了；
 - 将 `measurement_value` 设成550；此时，measurement和prior几乎实在说，机器人不在同一个地方了；但是尽管如此，posterior的peak也比prior和measurement高。也就是说，无论measurement和prior区别多大，只要加上information from laser scanner，我们都可以得到一个 `information gain`
@@ -46,4 +46,30 @@
   - 高斯 * 高斯 = 高斯
   - 高斯 · 高斯 = 高斯
 - 并且，由于第二个绿色曲线（measurement）的方差比prior大一倍，所以得到的红色曲线（posterior）更靠近prior，也就是更信任prior
+
+# C 08 1D Kalman Filter 推导
+
+## Filter Step
+
+利用高斯分布描述prior；Likelihood（c用于从状态空间转换到测量空间；这样，机器人的位置可以用厘米做单位，而测量信号仍然用毫米做单位）；以及posterior；
+
+现在，我们就不再需要像之前那样，利用arrays存储概率分布，然后再计算乘积，从而近似posterior；而只需要更新posterior对应的正态分布的期望和方差；
+
+### 判断posterior是否仍然满足高斯分布并且得到公式
+
+推导Kalman Gain；以及期望和方差的更新公式
+
+- K = 0：posterior的更新将忽略measurement，直接将predicted/prior作为posterior
+- K = 1：posterior的更新将忽略predicted，直接将measurement作为posterior
+- 将K变形后，可以看出：如果measurement的误差越大，K就越小，就越忽略measurement，而重视predicted；
+
+## Prediction Step
+
+如何处理卷积（积分）；
+
+这里，同样用高斯分布描述上一步的posterior和下一步的状态量的概率分布；这里用线性仿射变换描述运动模型；
+
+# C 09 1D KF 总结和Implmentation
+
+预测的结果仍然是高斯分布；并且可以计算出来这个分布的期望和方差，至于如何证明，可以查看《概率机器人》
 
